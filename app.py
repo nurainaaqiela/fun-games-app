@@ -6,9 +6,15 @@ st.set_page_config(page_title="Family Quiz 🎯", layout="centered")
 # QUESTIONS
 # -----------------------
 questions = [
-    {"q": "Who is the oldest cousin?", "options": ["Ali", "Siti", "Ahmad"], "answer": "Ali"},
-    {"q": "Family Day month?", "options": ["Jan", "May", "Dec"], "answer": "May"},
-    {"q": "How many days in a week?", "options": ["5", "6", "7"], "answer": "7"},
+    {"q": "Who is the oldest cousin in the family?", "options": ["Ali", "Siti", "Ahmad", "Maya"], "answer": "Ali"},
+
+    {"q": "Family Day is usually held in which month?", "options": ["January", "May", "August", "December"], "answer": "May"},
+
+    {"q": "How many days are there in a week?", "options": ["5", "6", "7", "8"], "answer": "7"},
+
+    {"q": "Which activity is most common in Family Day?", "options": ["Sleeping", "Games", "Studying", "Working"], "answer": "Games"},
+
+    {"q": "What is the main purpose of Family Day?", "options": ["Compete", "Bonding", "Travel alone", "Work"], "answer": "Bonding"},
 ]
 
 # -----------------------
@@ -20,11 +26,14 @@ if "i" not in st.session_state:
 if "score" not in st.session_state:
     st.session_state.score = 0
 
-if "feedback" not in st.session_state:
-    st.session_state.feedback = ""
+if "bonus" not in st.session_state:
+    st.session_state.bonus = 0
 
 if "answered" not in st.session_state:
     st.session_state.answered = False
+
+if "feedback" not in st.session_state:
+    st.session_state.feedback = ""
 
 if "leaderboard" not in st.session_state:
     st.session_state.leaderboard = {}
@@ -35,29 +44,25 @@ if "name" not in st.session_state:
 # -----------------------
 # TITLE
 # -----------------------
-st.title("🎯 Family Day Quiz Game")
+st.title("🎯 Family Day Quiz (Bonus Edition)")
 
 # -----------------------
-# NAME INPUT
+# NAME
 # -----------------------
 if not st.session_state.name:
     st.session_state.name = st.text_input("Enter your name 👇")
 
 # -----------------------
-# GAME START
+# GAME
 # -----------------------
 if st.session_state.name:
 
-    # -----------------------
-    # QUIZ NOT FINISHED
-    # -----------------------
     if st.session_state.i < len(questions):
 
         q = questions[st.session_state.i]
 
         st.subheader(f"Q{st.session_state.i + 1}: {q['q']}")
 
-        # Disable radio after answering
         choice = st.radio(
             "Choose answer:",
             q["options"],
@@ -68,19 +73,25 @@ if st.session_state.name:
         # SUBMIT ANSWER
         # -----------------------
         if not st.session_state.answered:
+
             if st.button("Submit Answer"):
+
                 correct = q["answer"]
 
                 if choice == correct:
                     st.session_state.score += 1
-                    st.session_state.feedback = "✅ Correct!"
+
+                    # ⭐ BONUS RULE
+                    st.session_state.bonus += 1
+                    st.session_state.feedback = "✅ Correct! +1 point ⭐ BONUS +1"
+
                 else:
                     st.session_state.feedback = f"❌ Wrong! Correct answer: {correct}"
 
                 st.session_state.answered = True
 
         # -----------------------
-        # SHOW FEEDBACK
+        # FEEDBACK
         # -----------------------
         if st.session_state.feedback:
             st.info(st.session_state.feedback)
@@ -91,30 +102,35 @@ if st.session_state.name:
         if st.session_state.answered:
             if st.button("Next ➜"):
                 st.session_state.i += 1
-                st.session_state.feedback = ""
                 st.session_state.answered = False
+                st.session_state.feedback = ""
                 st.rerun()
 
     # -----------------------
-    # FINISHED QUIZ
+    # END GAME
     # -----------------------
     else:
-        st.success("🎉 Quiz Completed!")
-        st.write(f"Name: **{st.session_state.name}**")
-        st.write(f"Score: **{st.session_state.score} / {len(questions)}**")
+        total = st.session_state.score + st.session_state.bonus
 
-        # SAVE SCORE
-        st.session_state.leaderboard[st.session_state.name] = st.session_state.score
+        st.success("🎉 Quiz Completed!")
+        st.write(f"👤 Name: **{st.session_state.name}**")
+        st.write(f"⭐ Score: {st.session_state.score}")
+        st.write(f"⚡ Bonus: {st.session_state.bonus}")
+        st.write(f"🏆 Total Score: **{total}**")
+
+        # SAVE TO LEADERBOARD
+        st.session_state.leaderboard[st.session_state.name] = total
 
         if st.button("Play Again"):
             st.session_state.i = 0
             st.session_state.score = 0
-            st.session_state.feedback = ""
+            st.session_state.bonus = 0
             st.session_state.answered = False
+            st.session_state.feedback = ""
             st.rerun()
 
         # -----------------------
-        # LEADERBOARD (ONLY AT END)
+        # LEADERBOARD
         # -----------------------
         st.divider()
         st.subheader("🏆 Leaderboard")
@@ -126,4 +142,4 @@ if st.session_state.name:
         )
 
         for name, score in sorted_board:
-            st.write(f"👤 {name} — ⭐ {score}")
+            st.write(f"👤 {name} — 🏆 {score}")
