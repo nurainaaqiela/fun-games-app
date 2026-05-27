@@ -1,4 +1,6 @@
 import streamlit as st
+import pandas as pd
+import os
 
 st.set_page_config(page_title="Family Quiz 🎯", layout="centered")
 
@@ -12,6 +14,20 @@ questions = [
     {"q": "Which activity is most common in Family Day?", "options": ["Sleeping", "Games", "Studying", "Working"], "answer": "Games"},
     {"q": "What is the main purpose of Family Day?", "options": ["Compete", "Bonding", "Travel alone", "Work"], "answer": "Bonding"},
 ]
+
+# -----------------------
+# LEADERBOARD FILE
+# -----------------------
+LEADERBOARD_FILE = "leaderboard.csv"
+
+def load_leaderboard():
+    if os.path.exists(LEADERBOARD_FILE):
+        return pd.read_csv(LEADERBOARD_FILE)
+    else:
+        return pd.DataFrame(columns=["name", "score"])
+
+def save_leaderboard(df):
+    df.to_csv(LEADERBOARD_FILE, index=False)
 
 # -----------------------
 # SESSION STATE
@@ -37,42 +53,36 @@ if "feedback" not in st.session_state:
 if "finished" not in st.session_state:
     st.session_state.finished = False
 
-if "leaderboard" not in st.session_state:
-    st.session_state.leaderboard = {}
-
 # -----------------------
 # TITLE
 # -----------------------
 st.markdown(
-    """
-    <h1 style='text-align:center; font-size:52px; color:#2E86C1;'>
-    🎯 Family Day Quiz Challenge
-    </h1>
-    """,
+    "<h1 style='text-align:center; font-size:52px; color:#2E86C1;'>🎯 Family Quiz Challenge</h1>",
     unsafe_allow_html=True
 )
 
 st.divider()
 
 # -----------------------
-# SIDEBAR LEADERBOARD (ALWAYS SORTED)
+# LOAD LEADERBOARD
+# -----------------------
+leaderboard_df = load_leaderboard()
+
+# -----------------------
+# SIDEBAR LEADERBOARD (SORTED)
 # -----------------------
 st.sidebar.title("🏆 Leaderboard")
 
-if st.session_state.leaderboard:
-    sorted_board = sorted(
-        st.session_state.leaderboard.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )
+if not leaderboard_df.empty:
+    leaderboard_df = leaderboard_df.sort_values(by="score", ascending=False)
 
-    for rank, (name, score) in enumerate(sorted_board, start=1):
-        st.sidebar.write(f"{rank}. 👤 {name} — ⭐ {score}")
+    for i, row in leaderboard_df.iterrows():
+        st.sidebar.write(f"👤 {row['name']} — ⭐ {row['score']}")
 else:
     st.sidebar.write("No scores yet.")
 
 # -----------------------
-# START SCREEN
+# NAME INPUT
 # -----------------------
 if not st.session_state.name:
     st.session_state.name = st.text_input("👋 Enter your name to start")
@@ -85,13 +95,10 @@ if st.session_state.name and not st.session_state.started:
         st.rerun()
 
 # -----------------------
-# QUIZ LOGIC
+# QUIZ
 # -----------------------
 if st.session_state.started and not st.session_state.finished:
 
-    # -----------------------
-    # QUESTIONS
-    # -----------------------
     if st.session_state.i < len(questions):
 
         q = questions[st.session_state.i]
@@ -99,48 +106,39 @@ if st.session_state.started and not st.session_state.finished:
         st.subheader(f"Question {st.session_state.i + 1} / {len(questions)}")
         st.write(q["q"])
 
-        options = ["-- Select an answer --"] + q["options"]
+        options = ["-- Select --"] + q["options"]
 
         choice = st.radio(
-            "Choose your answer:",
+            "Choose answer:",
             options,
             index=0,
             disabled=st.session_state.answered
         )
 
-        # -----------------------
-        # SUBMIT
-        # -----------------------
         if not st.session_state.answered:
-
-            if st.button("Submit Answer"):
-
-                if choice == "-- Select an answer --":
-                    st.warning("⚠️ Please select an answer first!")
+            if st.button("Submit"):
+                if choice == "-- Select --":
+                    st.warning("Select an answer!")
                 else:
                     if choice == q["answer"]:
                         st.session_state.score += 1
                         st.session_state.feedback = "✅ Correct!"
                     else:
                         st.session_state.feedback = "❌ Wrong!"
-
                     st.session_state.answered = True
 
         if st.session_state.feedback:
             st.info(st.session_state.feedback)
 
-        # -----------------------
-        # NEXT QUESTION
-        # -----------------------
         if st.session_state.answered:
-            if st.button("Next ➜"):
+            if st.button("Next"):
                 st.session_state.i += 1
                 st.session_state.answered = False
                 st.session_state.feedback = ""
                 st.rerun()
 
     # -----------------------
-    # FINAL SCREEN (IMPORTANT FIX)
+    # FINAL SCREEN + SAVE
     # -----------------------
     else:
         st.session_state.finished = True
@@ -150,23 +148,19 @@ if st.session_state.started and not st.session_state.finished:
         st.write(f"👤 Name: **{st.session_state.name}**")
         st.write(f"⭐ Score: **{st.session_state.score} / {len(questions)}**")
 
-        # -----------------------
-        # UPDATE LEADERBOARD (KEEP BEST SCORE)
-        # -----------------------
-        name = st.session_state.name
-        score = st.session_state.score
+        # SAVE TO CSV (PERSISTENT)
+        leaderboard_df = load_leaderboard()
 
-        if name in st.session_state.leaderboard:
-            st.session_state.leaderboard[name] = max(
-                st.session_state.leaderboard[name],
-                score
-            )
-        else:
-            st.session_state.leaderboard[name] = score
+        new_data = pd.DataFrame([[st.session_state.name, st.session_state.score]],
+                                columns=["name", "score"])
 
-        # -----------------------
-        # PLAY AGAIN
-        # -----------------------
+        leaderboard_df = pd.concat([leaderboard_df, new_data], ignore_index=True)
+
+        # Keep BEST score per user
+        leaderboard_df = leaderboard_df.groupby("name", as_index=False)["score"].max()
+
+        save_leaderboard(leaderboard_df)
+
         if st.button("🔁 Play Again"):
             st.session_state.started = False
             st.session_state.finished = False
