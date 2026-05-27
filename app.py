@@ -14,7 +14,7 @@ questions = [
 ]
 
 # -----------------------
-# SESSION STATE INIT
+# SESSION STATE
 # -----------------------
 if "started" not in st.session_state:
     st.session_state.started = False
@@ -34,6 +34,9 @@ if "answered" not in st.session_state:
 if "feedback" not in st.session_state:
     st.session_state.feedback = ""
 
+if "finished" not in st.session_state:
+    st.session_state.finished = False
+
 if "leaderboard" not in st.session_state:
     st.session_state.leaderboard = {}
 
@@ -49,19 +52,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown(
-    """
-    <p style='text-align:center; font-size:22px; color:gray;'>
-    Compete with your family and see who is the smartest! 🏆
-    </p>
-    """,
-    unsafe_allow_html=True
-)
-
 st.divider()
 
 # -----------------------
-# 🏆 PERSISTENT LEADERBOARD (SIDEBAR)
+# SIDEBAR LEADERBOARD (ALWAYS SORTED)
 # -----------------------
 st.sidebar.title("🏆 Leaderboard")
 
@@ -72,8 +66,8 @@ if st.session_state.leaderboard:
         reverse=True
     )
 
-    for name, score in sorted_board:
-        st.sidebar.write(f"👤 {name} — ⭐ {score}")
+    for rank, (name, score) in enumerate(sorted_board, start=1):
+        st.sidebar.write(f"{rank}. 👤 {name} — ⭐ {score}")
 else:
     st.sidebar.write("No scores yet.")
 
@@ -81,27 +75,8 @@ else:
 # START SCREEN
 # -----------------------
 if not st.session_state.name:
-    st.markdown(
-        """
-        <div style="
-            text-align:center;
-            padding:25px;
-            border-radius:20px;
-            background-color:#f5f7ff;
-            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
-        ">
-            <h2 style="font-size:28px;">👋 Welcome Player!</h2>
-            <p style="font-size:18px;">Enter your name to start the challenge</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.session_state.name = st.text_input("👋 Enter your name to start")
 
-    st.session_state.name = st.text_input("", placeholder="Type your name here...")
-
-# -----------------------
-# START BUTTON
-# -----------------------
 if st.session_state.name and not st.session_state.started:
     st.success(f"Welcome {st.session_state.name} 👏")
 
@@ -112,10 +87,10 @@ if st.session_state.name and not st.session_state.started:
 # -----------------------
 # QUIZ LOGIC
 # -----------------------
-if st.session_state.started:
+if st.session_state.started and not st.session_state.finished:
 
     # -----------------------
-    # QUESTIONS LOOP
+    # QUESTIONS
     # -----------------------
     if st.session_state.i < len(questions):
 
@@ -134,7 +109,7 @@ if st.session_state.started:
         )
 
         # -----------------------
-        # SUBMIT ANSWER
+        # SUBMIT
         # -----------------------
         if not st.session_state.answered:
 
@@ -151,9 +126,6 @@ if st.session_state.started:
 
                     st.session_state.answered = True
 
-        # -----------------------
-        # FEEDBACK
-        # -----------------------
         if st.session_state.feedback:
             st.info(st.session_state.feedback)
 
@@ -168,16 +140,18 @@ if st.session_state.started:
                 st.rerun()
 
     # -----------------------
-    # FINAL SCREEN
+    # FINAL SCREEN (IMPORTANT FIX)
     # -----------------------
     else:
+        st.session_state.finished = True
+
         st.success("🎉 Quiz Completed!")
 
         st.write(f"👤 Name: **{st.session_state.name}**")
         st.write(f"⭐ Score: **{st.session_state.score} / {len(questions)}**")
 
         # -----------------------
-        # SAVE BEST SCORE
+        # UPDATE LEADERBOARD (KEEP BEST SCORE)
         # -----------------------
         name = st.session_state.name
         score = st.session_state.score
@@ -191,13 +165,14 @@ if st.session_state.started:
             st.session_state.leaderboard[name] = score
 
         # -----------------------
-        # PLAY AGAIN RESET
+        # PLAY AGAIN
         # -----------------------
-        if st.button("Play Again"):
+        if st.button("🔁 Play Again"):
             st.session_state.started = False
-            st.session_state.name = ""
+            st.session_state.finished = False
             st.session_state.i = 0
             st.session_state.score = 0
             st.session_state.answered = False
             st.session_state.feedback = ""
+            st.session_state.name = ""
             st.rerun()
