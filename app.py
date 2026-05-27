@@ -1,74 +1,86 @@
 import streamlit as st
-import random
 
-st.set_page_config(page_title="Family Day Fun App 🎉", layout="centered")
+st.set_page_config(page_title="Family Quiz 🎯", layout="centered")
 
-# SESSION STATE
-if "scoreboard" not in st.session_state:
-    st.session_state.scoreboard = {}
+# -----------------------
+# DATA (EDIT YOUR QUESTIONS HERE)
+# -----------------------
+questions = [
+    {
+        "q": "Who is the oldest cousin in the family?",
+        "options": ["Ali", "Siti", "Ahmad", "Maya"],
+        "answer": "Ali"
+    },
+    {
+        "q": "Family Day is usually held in which month?",
+        "options": ["January", "May", "December", "August"],
+        "answer": "May"
+    },
+    {
+        "q": "How many days are there in a week?",
+        "options": ["5", "6", "7", "8"],
+        "answer": "7"
+    },
+    {
+        "q": "Which activity is most fun in Family Day?",
+        "options": ["Sleeping", "Games", "Studying", "Working"],
+        "answer": "Games"
+    }
+]
 
-if "quiz_i" not in st.session_state:
-    st.session_state.quiz_i = 0
-    st.session_state.quiz_score = 0
+# -----------------------
+# SESSION STATE (SAVE PROGRESS)
+# -----------------------
+if "index" not in st.session_state:
+    st.session_state.index = 0
 
-menu = st.sidebar.radio(
-    "🎮 Choose Game",
-    ["🏠 Home", "🎯 Quiz", "🎡 Spin Wheel", "🎭 Charades", "🧠 Guess Game", "🏆 Scoreboard"]
-)
+if "score" not in st.session_state:
+    st.session_state.score = 0
 
-if menu == "🏠 Home":
-    st.title("🎉 Family Day Fun App")
-    st.write("Welcome!")
+if "finished" not in st.session_state:
+    st.session_state.finished = False
 
-elif menu == "🎯 Quiz":
-    questions = [
-        {"q": "Who is the oldest cousin?", "options": ["Ali", "Siti", "Ahmad"], "answer": "Ali"},
-        {"q": "Family Day month?", "options": ["Jan", "May", "Dec"], "answer": "May"},
-    ]
+# -----------------------
+# TITLE
+# -----------------------
+st.title("🎯 Family Day Quiz Game")
+st.write("Answer the questions and see who gets the highest score! 🎉")
 
-    q = questions[st.session_state.quiz_i]
-    st.subheader(q["q"])
+# -----------------------
+# GAME LOGIC
+# -----------------------
+if not st.session_state.finished:
 
-    choice = st.radio("Choose:", q["options"])
+    q = questions[st.session_state.index]
 
-    if st.button("Submit"):
+    st.subheader(f"Q{st.session_state.index + 1}: {q['q']}")
+
+    choice = st.radio("Choose your answer:", q["options"], key=st.session_state.index)
+
+    if st.button("Submit Answer"):
+
         if choice == q["answer"]:
-            st.session_state.quiz_score += 1
-            st.success("Correct!")
+            st.session_state.score += 1
+            st.success("✅ Correct!")
         else:
-            st.error("Wrong")
+            st.error(f"❌ Wrong! Correct answer: {q['answer']}")
 
-        st.session_state.quiz_i += 1
-        if st.session_state.quiz_i >= len(questions):
-            st.session_state.quiz_i = 0
+        st.session_state.index += 1
 
-    st.write("Score:", st.session_state.quiz_score)
-
-elif menu == "🎡 Spin Wheel":
-    items = ["Sing 🎤", "Dance 💃", "Selfie 🤳", "Joke 😂"]
-    if st.button("SPIN"):
-        st.success(random.choice(items))
-
-elif menu == "🎭 Charades":
-    words = ["Cooking", "Sleeping", "Football"]
-    if st.button("Get Word"):
-        st.header(random.choice(words))
-
-elif menu == "🧠 Guess Game":
-    answer = "ali"
-    guess = st.text_input("Guess family member")
-
-    if st.button("Check"):
-        if guess.lower() == answer:
-            st.success("Correct!")
+        if st.session_state.index >= len(questions):
+            st.session_state.finished = True
         else:
-            st.error("Try again")
+            st.rerun()
 
-elif menu == "🏆 Scoreboard":
-    name = st.text_input("Name")
-    score = st.number_input("Score", 0)
+# -----------------------
+# RESULT PAGE
+# -----------------------
+else:
+    st.success("🎉 Quiz Completed!")
+    st.write(f"Your final score: **{st.session_state.score} / {len(questions)}**")
 
-    if st.button("Save"):
-        st.session_state.scoreboard[name] = score
-
-    st.write(st.session_state.scoreboard)
+    if st.button("Play Again 🔄"):
+        st.session_state.index = 0
+        st.session_state.score = 0
+        st.session_state.finished = False
+        st.rerun()
