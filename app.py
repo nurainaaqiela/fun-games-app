@@ -38,20 +38,66 @@ if "leaderboard" not in st.session_state:
     st.session_state.leaderboard = {}
 
 # -----------------------
-# TITLE
+# TITLE (BIG GAME STYLE)
 # -----------------------
-st.title("🎯 Family Day Quiz Game")
+st.markdown(
+    """
+    <h1 style='text-align:center; font-size:52px; color:#2E86C1;'>
+    🎯 Family Day Quiz Challenge
+    </h1>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    """
+    <p style='text-align:center; font-size:22px; color:gray;'>
+    Compete with your family and see who is the smartest! 🏆
+    </p>
+    """,
+    unsafe_allow_html=True
+)
+
+st.divider()
 
 # -----------------------
-# START SCREEN (FIXED FLOW)
+# START SCREEN CARD
 # -----------------------
 if not st.session_state.name:
-    st.session_state.name = st.text_input("Enter your name 👇")
+    st.markdown(
+        """
+        <div style="
+            text-align:center;
+            padding:25px;
+            border-radius:20px;
+            background-color:#f5f7ff;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+        ">
+            <h2 style="font-size:28px;">👋 Welcome Player!</h2>
+            <p style="font-size:18px;">Enter your name to start the challenge</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
+    st.session_state.name = st.text_input("", placeholder="Type your name here...")
+
+# -----------------------
+# START BUTTON (ONLY AFTER NAME)
+# -----------------------
 if st.session_state.name and not st.session_state.started:
-    st.success(f"Welcome {st.session_state.name} 👋")
+    st.success(f"Welcome {st.session_state.name} 👏")
 
-    if st.button("Start Quiz 🚀"):
+    st.markdown(
+        """
+        <p style='font-size:20px; text-align:center;'>
+        Ready to test your family knowledge? 😄
+        </p>
+        """,
+        unsafe_allow_html=True
+    )
+
+    if st.button("🚀 START QUIZ"):
         st.session_state.started = True
         st.rerun()
 
