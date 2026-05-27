@@ -1,8 +1,14 @@
+
 import streamlit as st
 import pandas as pd
 import os
 
 st.set_page_config(page_title="Family Quiz 🎯", layout="centered")
+
+# =======================
+# ADMIN PASSWORD
+# =======================
+ADMIN_PASSWORD = "family123"  # change this if you want
 
 # =======================
 # QUESTIONS
@@ -16,7 +22,7 @@ questions = [
 ]
 
 # =======================
-# LEADERBOARD (CSV STORAGE)
+# LEADERBOARD FILE
 # =======================
 FILE = "leaderboard.csv"
 
@@ -26,6 +32,10 @@ def load_board():
     return pd.DataFrame(columns=["name", "score"])
 
 def save_board(df):
+    df.to_csv(FILE, index=False)
+
+def reset_board():
+    df = pd.DataFrame(columns=["name", "score"])
     df.to_csv(FILE, index=False)
 
 # =======================
@@ -57,7 +67,7 @@ st.markdown(
 st.divider()
 
 # =======================
-# LEADERBOARD (ALWAYS LIVE)
+# SIDEBAR LEADERBOARD
 # =======================
 st.sidebar.title("🏆 Leaderboard")
 
@@ -70,6 +80,22 @@ if not board.empty:
         st.sidebar.write(f"{rank}. 👤 {row.name} — ⭐ {row.score}")
 else:
     st.sidebar.write("No scores yet.")
+
+# =======================
+# ADMIN RESET (PASSWORD PROTECTED)
+# =======================
+st.sidebar.divider()
+st.sidebar.subheader("🔐 Admin Panel")
+
+password = st.sidebar.text_input("Enter admin password", type="password")
+
+if st.sidebar.button("🧹 Reset Leaderboard"):
+    if password == ADMIN_PASSWORD:
+        reset_board()
+        st.sidebar.success("Leaderboard reset successfully!")
+        st.rerun()
+    else:
+        st.sidebar.error("❌ Wrong password!")
 
 # =======================
 # NAME INPUT
@@ -92,9 +118,6 @@ if st.session_state.name and not st.session_state.started:
 # =======================
 if st.session_state.started and not st.session_state.finished:
 
-    # -----------------------
-    # QUESTIONS
-    # -----------------------
     if st.session_state.i < len(questions):
 
         q = questions[st.session_state.i]
@@ -111,9 +134,6 @@ if st.session_state.started and not st.session_state.finished:
             disabled=st.session_state.answered
         )
 
-        # -----------------------
-        # SUBMIT
-        # -----------------------
         if not st.session_state.answered:
             if st.button("Submit"):
                 if choice == "-- Select --":
@@ -129,9 +149,6 @@ if st.session_state.started and not st.session_state.finished:
         if st.session_state.feedback:
             st.info(st.session_state.feedback)
 
-        # -----------------------
-        # NEXT
-        # -----------------------
         if st.session_state.answered:
             if st.button("Next ➜"):
                 st.session_state.i += 1
@@ -140,7 +157,7 @@ if st.session_state.started and not st.session_state.finished:
                 st.rerun()
 
     # =======================
-    # FINAL SCREEN (FIXED SAVE LOGIC)
+    # FINAL SCREEN (SAVE SCORE)
     # =======================
     else:
         st.session_state.finished = True
@@ -150,9 +167,7 @@ if st.session_state.started and not st.session_state.finished:
         st.write(f"👤 Name: **{st.session_state.name}**")
         st.write(f"⭐ Score: **{st.session_state.score} / {len(questions)}**")
 
-        # -----------------------
         # SAVE ONLY ONCE
-        # -----------------------
         if not st.session_state.saved:
 
             board = load_board()
@@ -164,18 +179,17 @@ if st.session_state.started and not st.session_state.finished:
 
             board = pd.concat([board, new_row], ignore_index=True)
 
-            # keep BEST score per user
+            # keep best score per user
             board = board.groupby("name", as_index=False)["score"].max()
 
             save_board(board)
 
             st.session_state.saved = True
 
-        # force refresh view after saving
         st.rerun()
 
 # =======================
-# PLAY AGAIN RESET
+# PLAY AGAIN
 # =======================
 if st.session_state.finished:
     if st.button("🔁 Play Again"):
