@@ -178,19 +178,21 @@ if st.session_state.started:
             st.rerun()
 
         # -----------------------
-        # LEADERBOARD (ONLY END)
-        # -----------------------
-        st.divider()
-        st.subheader("🏆 Leaderboard")
+# SIDEBAR LEADERBOARD (PERSISTENT)
+# -----------------------
+st.sidebar.title("🏆 Leaderboard")
 
-        sorted_board = sorted(
-            st.session_state.leaderboard.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
+if st.session_state.leaderboard:
+    sorted_board = sorted(
+        st.session_state.leaderboard.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
 
-        for name, score in sorted_board:
-            st.write(f"👤 {name} — ⭐ {score}")
+    for name, score in sorted_board:
+        st.sidebar.write(f"👤 {name} — ⭐ {score}")
+else:
+    st.sidebar.write("No scores yet.")
 
         # -----------------------
         # ANALYTICS (NO AVERAGE SCORE)
