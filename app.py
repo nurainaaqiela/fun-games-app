@@ -16,6 +16,12 @@ questions = [
 # -----------------------
 # SESSION STATE
 # -----------------------
+if "started" not in st.session_state:
+    st.session_state.started = False
+
+if "name" not in st.session_state:
+    st.session_state.name = ""
+
 if "i" not in st.session_state:
     st.session_state.i = 0
 
@@ -31,65 +37,37 @@ if "feedback" not in st.session_state:
 if "leaderboard" not in st.session_state:
     st.session_state.leaderboard = {}
 
-if "name" not in st.session_state:
-    st.session_state.name = ""
+# -----------------------
+# TITLE
+# -----------------------
+st.title("🎯 Family Day Quiz Game")
 
 # -----------------------
-# ANALYTICS HELPERS
-# -----------------------
-def get_stats():
-    scores = list(st.session_state.leaderboard.values())
-    if not scores:
-        return 0, 0, 0
-    return len(scores), max(scores), sum(scores) / len(scores)
-
-# -----------------------
-# TITLE (GAME STYLE UI)
-# -----------------------
-st.markdown(
-    """
-    <h1 style='text-align: center;'>🎯 Family Day Quiz Challenge</h1>
-    """,
-    unsafe_allow_html=True
-)
-
-st.progress(st.session_state.i / len(questions))
-
-st.write(f"📊 Question {st.session_state.i + 1} of {len(questions)}")
-
-# -----------------------
-# NAME INPUT
+# START SCREEN (FIXED FLOW)
 # -----------------------
 if not st.session_state.name:
     st.session_state.name = st.text_input("Enter your name 👇")
 
-# -----------------------
-# GAME START
-# -----------------------
-if st.session_state.name:
+if st.session_state.name and not st.session_state.started:
+    st.success(f"Welcome {st.session_state.name} 👋")
 
-    # -----------------------
-    # QUIZ
-    # -----------------------
+    if st.button("Start Quiz 🚀"):
+        st.session_state.started = True
+        st.rerun()
+
+# -----------------------
+# QUIZ GAME
+# -----------------------
+if st.session_state.started:
+
     if st.session_state.i < len(questions):
 
         q = questions[st.session_state.i]
 
-        st.markdown(
-            f"""
-            <div style="
-                padding:20px;
-                border-radius:15px;
-                background-color:#f2f2f2;
-                text-align:center;
-                font-size:20px;">
-                {q['q']}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.subheader(f"Question {st.session_state.i + 1} / {len(questions)}")
+        st.write(q["q"])
 
-        options = ["-- Select --"] + q["options"]
+        options = ["-- Select an answer --"] + q["options"]
 
         choice = st.radio(
             "Choose your answer:",
@@ -98,12 +76,15 @@ if st.session_state.name:
             disabled=st.session_state.answered
         )
 
+        # -----------------------
+        # SUBMIT
+        # -----------------------
         if not st.session_state.answered:
 
             if st.button("Submit Answer"):
 
-                if choice == "-- Select --":
-                    st.warning("⚠️ Please choose an answer")
+                if choice == "-- Select an answer --":
+                    st.warning("⚠️ Please select an answer first!")
                 else:
                     if choice == q["answer"]:
                         st.session_state.score += 1
@@ -113,9 +94,15 @@ if st.session_state.name:
 
                     st.session_state.answered = True
 
+        # -----------------------
+        # FEEDBACK
+        # -----------------------
         if st.session_state.feedback:
             st.info(st.session_state.feedback)
 
+        # -----------------------
+        # NEXT BUTTON
+        # -----------------------
         if st.session_state.answered:
             if st.button("Next ➜"):
                 st.session_state.i += 1
@@ -124,22 +111,20 @@ if st.session_state.name:
                 st.rerun()
 
     # -----------------------
-    # RESULT PAGE
+    # FINAL SCREEN
     # -----------------------
     else:
         st.success("🎉 Quiz Completed!")
 
-        st.markdown(f"""
-        <div style='text-align:center; font-size:20px;'>
-        👤 {st.session_state.name}<br>
-        ⭐ Score: {st.session_state.score} / {len(questions)}
-        </div>
-        """, unsafe_allow_html=True)
+        st.write(f"👤 Name: **{st.session_state.name}**")
+        st.write(f"⭐ Score: **{st.session_state.score} / {len(questions)}**")
 
         # SAVE SCORE
         st.session_state.leaderboard[st.session_state.name] = st.session_state.score
 
         if st.button("Play Again"):
+            st.session_state.started = False
+            st.session_state.name = ""
             st.session_state.i = 0
             st.session_state.score = 0
             st.session_state.answered = False
@@ -147,7 +132,7 @@ if st.session_state.name:
             st.rerun()
 
         # -----------------------
-        # LEADERBOARD
+        # LEADERBOARD (ONLY END)
         # -----------------------
         st.divider()
         st.subheader("🏆 Leaderboard")
@@ -162,13 +147,13 @@ if st.session_state.name:
             st.write(f"👤 {name} — ⭐ {score}")
 
         # -----------------------
-        # ANALYTICS DASHBOARD
+        # ANALYTICS (NO AVERAGE SCORE)
         # -----------------------
         st.divider()
         st.subheader("📊 Analytics Dashboard")
 
-        total_players, max_score, avg_score = get_stats()
+        total_players = len(st.session_state.leaderboard)
+        highest_score = max(st.session_state.leaderboard.values(), default=0)
 
         st.write(f"👥 Total Players: {total_players}")
-        st.write(f"🏆 Highest Score: {max_score}")
-        st.write(f"📈 Average Score: {avg_score:.2f}")
+        st.write(f"🏆 Highest Score: {highest_score}")
