@@ -3,84 +3,75 @@ import streamlit as st
 st.set_page_config(page_title="Family Quiz 🎯", layout="centered")
 
 # -----------------------
-# DATA (EDIT YOUR QUESTIONS HERE)
+# QUESTIONS
 # -----------------------
 questions = [
-    {
-        "q": "Who is the oldest cousin in the family?",
-        "options": ["Ali", "Siti", "Ahmad", "Maya"],
-        "answer": "Ali"
-    },
-    {
-        "q": "Family Day is usually held in which month?",
-        "options": ["January", "May", "December", "August"],
-        "answer": "May"
-    },
-    {
-        "q": "How many days are there in a week?",
-        "options": ["5", "6", "7", "8"],
-        "answer": "7"
-    },
-    {
-        "q": "Which activity is most fun in Family Day?",
-        "options": ["Sleeping", "Games", "Studying", "Working"],
-        "answer": "Games"
-    }
+    {"q": "Who is the oldest cousin?", "options": ["Ali", "Siti", "Ahmad"], "answer": "Ali"},
+    {"q": "Family Day month?", "options": ["Jan", "May", "Dec"], "answer": "May"},
+    {"q": "How many days in a week?", "options": ["5", "6", "7"], "answer": "7"},
 ]
 
 # -----------------------
-# SESSION STATE (SAVE PROGRESS)
+# GLOBAL LEADERBOARD (SESSION)
 # -----------------------
-if "index" not in st.session_state:
-    st.session_state.index = 0
-
-if "score" not in st.session_state:
-    st.session_state.score = 0
-
-if "finished" not in st.session_state:
-    st.session_state.finished = False
+if "board" not in st.session_state:
+    st.session_state.board = {}
 
 # -----------------------
-# TITLE
+# PLAYER NAME
 # -----------------------
-st.title("🎯 Family Day Quiz Game")
-st.write("Answer the questions and see who gets the highest score! 🎉")
+st.title("🎯 Family Day Quiz Battle")
 
-# -----------------------
-# GAME LOGIC
-# -----------------------
-if not st.session_state.finished:
+name = st.text_input("Enter your name 👇")
 
-    q = questions[st.session_state.index]
+if name:
 
-    st.subheader(f"Q{st.session_state.index + 1}: {q['q']}")
+    if "i" not in st.session_state:
+        st.session_state.i = 0
+        st.session_state.score = 0
+        st.session_state.finished = False
 
-    choice = st.radio("Choose your answer:", q["options"], key=st.session_state.index)
+    if not st.session_state.finished:
 
-    if st.button("Submit Answer"):
+        q = questions[st.session_state.i]
 
-        if choice == q["answer"]:
-            st.session_state.score += 1
-            st.success("✅ Correct!")
-        else:
-            st.error(f"❌ Wrong! Correct answer: {q['answer']}")
+        st.subheader(q["q"])
+        choice = st.radio("Choose:", q["options"], key=st.session_state.i)
 
-        st.session_state.index += 1
+        if st.button("Submit"):
+            if choice == q["answer"]:
+                st.session_state.score += 1
+                st.success("Correct!")
+            else:
+                st.error("Wrong!")
 
-        if st.session_state.index >= len(questions):
-            st.session_state.finished = True
-        else:
+            st.session_state.i += 1
+
+            if st.session_state.i >= len(questions):
+                st.session_state.finished = True
+            else:
+                st.rerun()
+
+    else:
+        st.success(f"🎉 {name}, your score: {st.session_state.score}")
+
+        # SAVE SCORE
+        st.session_state.board[name] = st.session_state.score
+
+        if st.button("Play Again"):
+            st.session_state.i = 0
+            st.session_state.score = 0
+            st.session_state.finished = False
             st.rerun()
 
 # -----------------------
-# RESULT PAGE
+# LEADERBOARD
 # -----------------------
-else:
-    st.success("🎉 Quiz Completed!")
-    st.write(f"Your final score: **{st.session_state.score} / {len(questions)}**")
+st.divider()
+st.subheader("🏆 Leaderboard")
 
-    if st.button("Play Again 🔄"):
-        st.session_state.index = 0
-        st.session_state.score = 0
-        st.session_state.finished = False
-        st.rerun()
+if st.session_state.board:
+    for k, v in sorted(st.session_state.board.items(), key=lambda x: x[1], reverse=True):
+        st.write(f"👤 {k} — ⭐ {v}")
+else:
+    st.write("No scores yet")
