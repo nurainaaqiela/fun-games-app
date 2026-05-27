@@ -44,10 +44,13 @@ if not st.session_state.name:
     st.session_state.name = st.text_input("Enter your name 👇")
 
 # -----------------------
-# GAME START
+# GAME LOGIC
 # -----------------------
 if st.session_state.name:
 
+    # -----------------------
+    # QUIZ RUNNING
+    # -----------------------
     if not st.session_state.finished:
 
         q = questions[st.session_state.i]
@@ -64,7 +67,7 @@ if st.session_state.name:
                 st.session_state.score += 1
                 st.session_state.feedback = "✅ Correct!"
             else:
-                st.session_state.feedback = f"❌ Wrong! Correct answer is: {correct}"
+                st.session_state.feedback = f"❌ Wrong! Correct answer: {correct}"
 
             st.session_state.i += 1
 
@@ -73,16 +76,17 @@ if st.session_state.name:
 
             st.rerun()
 
-        # SHOW FEEDBACK
+        # feedback during quiz
         if st.session_state.feedback:
             st.info(st.session_state.feedback)
 
     # -----------------------
-    # RESULT PAGE
+    # FINAL RESULT PAGE
     # -----------------------
     else:
-        st.success(f"🎉 {st.session_state.name}, Quiz Completed!")
-        st.write(f"Final Score: **{st.session_state.score} / {len(questions)}**")
+        st.success("🎉 Quiz Completed!")
+        st.write(f"Name: **{st.session_state.name}**")
+        st.write(f"Score: **{st.session_state.score} / {len(questions)}**")
 
         # SAVE TO LEADERBOARD
         st.session_state.leaderboard[st.session_state.name] = st.session_state.score
@@ -94,20 +98,15 @@ if st.session_state.name:
             st.session_state.feedback = ""
             st.rerun()
 
-# -----------------------
-# LEADERBOARD
-# -----------------------
-st.divider()
-st.subheader("🏆 Leaderboard")
+        # ONLY SHOW LEADERBOARD HERE
+        st.divider()
+        st.subheader("🏆 Leaderboard")
 
-if st.session_state.leaderboard:
-    sorted_board = sorted(
-        st.session_state.leaderboard.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )
+        sorted_board = sorted(
+            st.session_state.leaderboard.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
 
-    for name, score in sorted_board:
-        st.write(f"👤 {name} — ⭐ {score}")
-else:
-    st.write("No scores yet")
+        for name, score in sorted_board:
+            st.write(f"👤 {name} — ⭐ {score}")
