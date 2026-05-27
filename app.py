@@ -7,13 +7,9 @@ st.set_page_config(page_title="Family Quiz 🎯", layout="centered")
 # -----------------------
 questions = [
     {"q": "Who is the oldest cousin in the family?", "options": ["Ali", "Siti", "Ahmad", "Maya"], "answer": "Ali"},
-
     {"q": "Family Day is usually held in which month?", "options": ["January", "May", "August", "December"], "answer": "May"},
-
     {"q": "How many days are there in a week?", "options": ["5", "6", "7", "8"], "answer": "7"},
-
     {"q": "Which activity is most common in Family Day?", "options": ["Sleeping", "Games", "Studying", "Working"], "answer": "Games"},
-
     {"q": "What is the main purpose of Family Day?", "options": ["Compete", "Bonding", "Travel alone", "Work"], "answer": "Bonding"},
 ]
 
@@ -44,28 +40,35 @@ if "name" not in st.session_state:
 # -----------------------
 # TITLE
 # -----------------------
-st.title("🎯 Family Day Quiz (Bonus Edition)")
+st.title("🎯 Family Day Quiz Game (Clean Version)")
 
 # -----------------------
-# NAME
+# NAME INPUT
 # -----------------------
 if not st.session_state.name:
     st.session_state.name = st.text_input("Enter your name 👇")
 
 # -----------------------
-# GAME
+# GAME START
 # -----------------------
 if st.session_state.name:
 
+    # -----------------------
+    # QUIZ RUNNING
+    # -----------------------
     if st.session_state.i < len(questions):
 
         q = questions[st.session_state.i]
 
         st.subheader(f"Q{st.session_state.i + 1}: {q['q']}")
 
+        # ✅ FIX: NO DEFAULT SELECTION
+        options = ["-- Select an answer --"] + q["options"]
+
         choice = st.radio(
-            "Choose answer:",
-            q["options"],
+            "Choose your answer:",
+            options,
+            index=0,
             disabled=st.session_state.answered
         )
 
@@ -76,22 +79,22 @@ if st.session_state.name:
 
             if st.button("Submit Answer"):
 
-                correct = q["answer"]
-
-                if choice == correct:
-                    st.session_state.score += 1
-
-                    # ⭐ BONUS RULE
-                    st.session_state.bonus += 1
-                    st.session_state.feedback = "✅ Correct! +1 point ⭐ BONUS +1"
-
+                if choice == "-- Select an answer --":
+                    st.warning("⚠️ Please select an answer first!")
                 else:
-                    st.session_state.feedback = f"❌ Wrong! Correct answer: {correct}"
+                    correct = q["answer"]
 
-                st.session_state.answered = True
+                    if choice == correct:
+                        st.session_state.score += 1
+                        st.session_state.bonus += 1
+                        st.session_state.feedback = "✅ Correct! +1 point ⭐ Bonus +1"
+                    else:
+                        st.session_state.feedback = "❌ Wrong!"
+
+                    st.session_state.answered = True
 
         # -----------------------
-        # FEEDBACK
+        # FEEDBACK (NO CORRECT ANSWER SHOWN)
         # -----------------------
         if st.session_state.feedback:
             st.info(st.session_state.feedback)
@@ -107,7 +110,7 @@ if st.session_state.name:
                 st.rerun()
 
     # -----------------------
-    # END GAME
+    # FINAL SCREEN
     # -----------------------
     else:
         total = st.session_state.score + st.session_state.bonus
@@ -116,7 +119,7 @@ if st.session_state.name:
         st.write(f"👤 Name: **{st.session_state.name}**")
         st.write(f"⭐ Score: {st.session_state.score}")
         st.write(f"⚡ Bonus: {st.session_state.bonus}")
-        st.write(f"🏆 Total Score: **{total}**")
+        st.write(f"🏆 Total: **{total}**")
 
         # SAVE TO LEADERBOARD
         st.session_state.leaderboard[st.session_state.name] = total
@@ -130,7 +133,7 @@ if st.session_state.name:
             st.rerun()
 
         # -----------------------
-        # LEADERBOARD
+        # LEADERBOARD (ONLY AT END)
         # -----------------------
         st.divider()
         st.subheader("🏆 Leaderboard")
