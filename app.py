@@ -14,7 +14,7 @@ questions = [
 ]
 
 # -----------------------
-# SESSION STATE
+# SESSION STATE INIT
 # -----------------------
 if "started" not in st.session_state:
     st.session_state.started = False
@@ -38,7 +38,7 @@ if "leaderboard" not in st.session_state:
     st.session_state.leaderboard = {}
 
 # -----------------------
-# TITLE (BIG GAME STYLE)
+# TITLE
 # -----------------------
 st.markdown(
     """
@@ -61,7 +61,24 @@ st.markdown(
 st.divider()
 
 # -----------------------
-# START SCREEN CARD
+# 🏆 PERSISTENT LEADERBOARD (SIDEBAR)
+# -----------------------
+st.sidebar.title("🏆 Leaderboard")
+
+if st.session_state.leaderboard:
+    sorted_board = sorted(
+        st.session_state.leaderboard.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    for name, score in sorted_board:
+        st.sidebar.write(f"👤 {name} — ⭐ {score}")
+else:
+    st.sidebar.write("No scores yet.")
+
+# -----------------------
+# START SCREEN
 # -----------------------
 if not st.session_state.name:
     st.markdown(
@@ -83,29 +100,23 @@ if not st.session_state.name:
     st.session_state.name = st.text_input("", placeholder="Type your name here...")
 
 # -----------------------
-# START BUTTON (ONLY AFTER NAME)
+# START BUTTON
 # -----------------------
 if st.session_state.name and not st.session_state.started:
     st.success(f"Welcome {st.session_state.name} 👏")
-
-    st.markdown(
-        """
-        <p style='font-size:20px; text-align:center;'>
-        Ready to test your family knowledge? 😄
-        </p>
-        """,
-        unsafe_allow_html=True
-    )
 
     if st.button("🚀 START QUIZ"):
         st.session_state.started = True
         st.rerun()
 
 # -----------------------
-# QUIZ GAME
+# QUIZ LOGIC
 # -----------------------
 if st.session_state.started:
 
+    # -----------------------
+    # QUESTIONS LOOP
+    # -----------------------
     if st.session_state.i < len(questions):
 
         q = questions[st.session_state.i]
@@ -123,7 +134,7 @@ if st.session_state.started:
         )
 
         # -----------------------
-        # SUBMIT
+        # SUBMIT ANSWER
         # -----------------------
         if not st.session_state.answered:
 
@@ -147,7 +158,7 @@ if st.session_state.started:
             st.info(st.session_state.feedback)
 
         # -----------------------
-        # NEXT BUTTON
+        # NEXT QUESTION
         # -----------------------
         if st.session_state.answered:
             if st.button("Next ➜"):
@@ -165,9 +176,23 @@ if st.session_state.started:
         st.write(f"👤 Name: **{st.session_state.name}**")
         st.write(f"⭐ Score: **{st.session_state.score} / {len(questions)}**")
 
-        # SAVE SCORE
-        st.session_state.leaderboard[st.session_state.name] = st.session_state.score
+        # -----------------------
+        # SAVE BEST SCORE
+        # -----------------------
+        name = st.session_state.name
+        score = st.session_state.score
 
+        if name in st.session_state.leaderboard:
+            st.session_state.leaderboard[name] = max(
+                st.session_state.leaderboard[name],
+                score
+            )
+        else:
+            st.session_state.leaderboard[name] = score
+
+        # -----------------------
+        # PLAY AGAIN RESET
+        # -----------------------
         if st.button("Play Again"):
             st.session_state.started = False
             st.session_state.name = ""
@@ -176,32 +201,3 @@ if st.session_state.started:
             st.session_state.answered = False
             st.session_state.feedback = ""
             st.rerun()
-
-        # -----------------------
-# SIDEBAR LEADERBOARD (PERSISTENT)
-# -----------------------
-st.sidebar.title("🏆 Leaderboard")
-
-if st.session_state.leaderboard:
-    sorted_board = sorted(
-        st.session_state.leaderboard.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )
-
-    for name, score in sorted_board:
-        st.sidebar.write(f"👤 {name} — ⭐ {score}")
-else:
-    st.sidebar.write("No scores yet.")
-
-        # -----------------------
-        # ANALYTICS (NO AVERAGE SCORE)
-        # -----------------------
-        st.divider()
-        st.subheader("📊 Analytics Dashboard")
-
-        total_players = len(st.session_state.leaderboard)
-        highest_score = max(st.session_state.leaderboard.values(), default=0)
-
-        st.write(f"👥 Total Players: {total_players}")
-        st.write(f"🏆 Highest Score: {highest_score}")
