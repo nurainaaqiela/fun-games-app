@@ -20,11 +20,11 @@ if "i" not in st.session_state:
 if "score" not in st.session_state:
     st.session_state.score = 0
 
-if "finished" not in st.session_state:
-    st.session_state.finished = False
-
 if "feedback" not in st.session_state:
     st.session_state.feedback = ""
+
+if "answered" not in st.session_state:
+    st.session_state.answered = False
 
 if "leaderboard" not in st.session_state:
     st.session_state.leaderboard = {}
@@ -44,61 +44,78 @@ if not st.session_state.name:
     st.session_state.name = st.text_input("Enter your name 👇")
 
 # -----------------------
-# GAME LOGIC
+# GAME START
 # -----------------------
 if st.session_state.name:
 
     # -----------------------
-    # QUIZ RUNNING
+    # QUIZ NOT FINISHED
     # -----------------------
-    if not st.session_state.finished:
+    if st.session_state.i < len(questions):
 
         q = questions[st.session_state.i]
 
         st.subheader(f"Q{st.session_state.i + 1}: {q['q']}")
 
-        choice = st.radio("Choose answer:", q["options"])
+        # Disable radio after answering
+        choice = st.radio(
+            "Choose answer:",
+            q["options"],
+            disabled=st.session_state.answered
+        )
 
-        if st.button("Submit Answer"):
+        # -----------------------
+        # SUBMIT ANSWER
+        # -----------------------
+        if not st.session_state.answered:
+            if st.button("Submit Answer"):
+                correct = q["answer"]
 
-            correct = q["answer"]
+                if choice == correct:
+                    st.session_state.score += 1
+                    st.session_state.feedback = "✅ Correct!"
+                else:
+                    st.session_state.feedback = f"❌ Wrong! Correct answer: {correct}"
 
-            if choice == correct:
-                st.session_state.score += 1
-                st.session_state.feedback = "✅ Correct!"
-            else:
-                st.session_state.feedback = f"❌ Wrong! Correct answer: {correct}"
+                st.session_state.answered = True
 
-            st.session_state.i += 1
-
-            if st.session_state.i >= len(questions):
-                st.session_state.finished = True
-
-            st.rerun()
-
-        # feedback during quiz
+        # -----------------------
+        # SHOW FEEDBACK
+        # -----------------------
         if st.session_state.feedback:
             st.info(st.session_state.feedback)
 
+        # -----------------------
+        # NEXT BUTTON
+        # -----------------------
+        if st.session_state.answered:
+            if st.button("Next ➜"):
+                st.session_state.i += 1
+                st.session_state.feedback = ""
+                st.session_state.answered = False
+                st.rerun()
+
     # -----------------------
-    # FINAL RESULT PAGE
+    # FINISHED QUIZ
     # -----------------------
     else:
         st.success("🎉 Quiz Completed!")
         st.write(f"Name: **{st.session_state.name}**")
         st.write(f"Score: **{st.session_state.score} / {len(questions)}**")
 
-        # SAVE TO LEADERBOARD
+        # SAVE SCORE
         st.session_state.leaderboard[st.session_state.name] = st.session_state.score
 
         if st.button("Play Again"):
             st.session_state.i = 0
             st.session_state.score = 0
-            st.session_state.finished = False
             st.session_state.feedback = ""
+            st.session_state.answered = False
             st.rerun()
 
-        # ONLY SHOW LEADERBOARD HERE
+        # -----------------------
+        # LEADERBOARD (ONLY AT END)
+        # -----------------------
         st.divider()
         st.subheader("🏆 Leaderboard")
 
