@@ -25,6 +25,9 @@ if "score" not in st.session_state:
 if "bonus" not in st.session_state:
     st.session_state.bonus = 0
 
+if "streak" not in st.session_state:
+    st.session_state.streak = 0
+
 if "answered" not in st.session_state:
     st.session_state.answered = False
 
@@ -40,29 +43,25 @@ if "name" not in st.session_state:
 # -----------------------
 # TITLE
 # -----------------------
-st.title("🎯 Family Day Quiz Game (Clean Version)")
+st.title("🎯 Family Day Quiz (Bonus Fixed)")
 
 # -----------------------
-# NAME INPUT
+# NAME
 # -----------------------
 if not st.session_state.name:
     st.session_state.name = st.text_input("Enter your name 👇")
 
 # -----------------------
-# GAME START
+# GAME
 # -----------------------
 if st.session_state.name:
 
-    # -----------------------
-    # QUIZ RUNNING
-    # -----------------------
     if st.session_state.i < len(questions):
 
         q = questions[st.session_state.i]
 
         st.subheader(f"Q{st.session_state.i + 1}: {q['q']}")
 
-        # ✅ FIX: NO DEFAULT SELECTION
         options = ["-- Select an answer --"] + q["options"]
 
         choice = st.radio(
@@ -73,7 +72,7 @@ if st.session_state.name:
         )
 
         # -----------------------
-        # SUBMIT ANSWER
+        # SUBMIT
         # -----------------------
         if not st.session_state.answered:
 
@@ -86,21 +85,29 @@ if st.session_state.name:
 
                     if choice == correct:
                         st.session_state.score += 1
-                        st.session_state.bonus += 1
-                        st.session_state.feedback = "✅ Correct! +1 point ⭐ Bonus +1"
+                        st.session_state.streak += 1
+
+                        # ⭐ BONUS RULE (FIXED)
+                        if st.session_state.streak >= 2:
+                            st.session_state.bonus += 1
+                            st.session_state.feedback = "✅ Correct! +1 ⭐ BONUS (streak!)"
+                        else:
+                            st.session_state.feedback = "✅ Correct!"
+
                     else:
+                        st.session_state.streak = 0
                         st.session_state.feedback = "❌ Wrong!"
 
                     st.session_state.answered = True
 
         # -----------------------
-        # FEEDBACK (NO CORRECT ANSWER SHOWN)
+        # FEEDBACK
         # -----------------------
         if st.session_state.feedback:
             st.info(st.session_state.feedback)
 
         # -----------------------
-        # NEXT BUTTON
+        # NEXT
         # -----------------------
         if st.session_state.answered:
             if st.button("Next ➜"):
@@ -110,31 +117,27 @@ if st.session_state.name:
                 st.rerun()
 
     # -----------------------
-    # FINAL SCREEN
+    # END
     # -----------------------
     else:
         total = st.session_state.score + st.session_state.bonus
 
         st.success("🎉 Quiz Completed!")
-        st.write(f"👤 Name: **{st.session_state.name}**")
         st.write(f"⭐ Score: {st.session_state.score}")
         st.write(f"⚡ Bonus: {st.session_state.bonus}")
         st.write(f"🏆 Total: **{total}**")
 
-        # SAVE TO LEADERBOARD
         st.session_state.leaderboard[st.session_state.name] = total
 
         if st.button("Play Again"):
             st.session_state.i = 0
             st.session_state.score = 0
             st.session_state.bonus = 0
+            st.session_state.streak = 0
             st.session_state.answered = False
             st.session_state.feedback = ""
             st.rerun()
 
-        # -----------------------
-        # LEADERBOARD (ONLY AT END)
-        # -----------------------
         st.divider()
         st.subheader("🏆 Leaderboard")
 
